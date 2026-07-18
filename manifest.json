@@ -1,0 +1,27 @@
+{
+  "name": "קלפי ספרדית - 500 מילים",
+  "short_name": "קלפי ספרדית",
+  "description": "למידת 500 המילים החשובות בספרדית עם תרגום לעברית, בשיטת קלפים חוזרים",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#dbeafe",
+  "theme_color": "#2196F3",
+  "dir": "rtl",
+  "lang": "he",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
