@@ -144,10 +144,20 @@ function nextCard() {
 
 function renderCard() {
   const word = session.byId[session.currentId];
+  els.answerButtons.classList.remove('show');
+
+  // Snap the flip back to front instantly (no animation) before swapping in
+  // the new word's text - otherwise the back face still shows mid-rotation
+  // while it's spinning back, briefly revealing the next word's translation.
+  els.flashcard.classList.add('no-transition');
+  els.flashcard.classList.remove('flipped');
+  void els.flashcard.offsetWidth; // force reflow so the instant reset applies
   els.wordEs.textContent = word.es;
   els.wordHe.textContent = word.he;
-  els.flashcard.classList.remove('flipped');
-  els.answerButtons.classList.remove('show');
+  requestAnimationFrame(() => {
+    els.flashcard.classList.remove('no-transition');
+  });
+
   const cc = getCorrectCount(word.id);
   els.cardMastery.textContent = `התקדמות: ${cc}/${MASTERY_TARGET}`;
   updateSessionProgressUI();
