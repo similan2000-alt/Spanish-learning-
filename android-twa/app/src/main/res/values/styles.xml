@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Twa" parent="Theme.AppCompat.DayNight.NoActionBar" />
+
+    <style name="Theme.Twa.Launcher">
+        <item name="android:windowBackground">@color/colorPrimary</item>
+    </style>
+</resources>
