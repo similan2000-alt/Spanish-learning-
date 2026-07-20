@@ -1,5 +1,6 @@
-// Offline cache so the app opens instantly and works without network on Android.
-const CACHE_NAME = 'es-he-flashcards-v1';
+// Offline cache so the app still works without network on Android.
+// Bump CACHE_NAME whenever assets change - see the fetch handler below for why.
+const CACHE_NAME = 'es-he-flashcards-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -27,18 +28,19 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // Network-first: always prefer the latest deployed version while online,
+  // and only fall back to the cache when there's no connection. A cache-first
+  // strategy here would silently keep serving whatever was cached on first
+  // visit forever, hiding every future update.
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const network = fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || network;
-    })
+    fetch(event.request)
+      .then((response) => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
