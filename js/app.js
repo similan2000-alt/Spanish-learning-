@@ -7,6 +7,44 @@ const SESSION_SIZE = 15;
 const REQUEUE_GAP = 2; // wrong answers reappear after this many other cards
 const INITIAL_UNLOCK = 20;
 
+// ---- Spanish pronunciation (Web Speech API, female voice preferred) ----
+let cachedSpanishVoice = null;
+let spanishVoiceReady = false;
+
+function pickSpanishVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = speechSynthesis.getVoices();
+  const esVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+  if (!esVoices.length) return null;
+  const femaleHints = ['female', 'mujer', 'woman', 'monica', 'mónica', 'paulina', 'lucia', 'lucía', 'esperanza', 'elena', 'conchita', 'camila'];
+  const female = esVoices.find(v => femaleHints.some(hint => v.name.toLowerCase().includes(hint)));
+  return female || esVoices[0];
+}
+
+function refreshSpanishVoice() {
+  const voice = pickSpanishVoice();
+  if (voice) {
+    cachedSpanishVoice = voice;
+    spanishVoiceReady = true;
+  }
+}
+
+if ('speechSynthesis' in window) {
+  refreshSpanishVoice();
+  speechSynthesis.onvoiceschanged = refreshSpanishVoice;
+}
+
+function speakSpanish(text) {
+  if (!('speechSynthesis' in window) || !text) return;
+  speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = cachedSpanishVoice ? cachedSpanishVoice.lang : 'es-ES';
+  if (cachedSpanishVoice) utter.voice = cachedSpanishVoice;
+  utter.rate = 0.9;
+  utter.pitch = 1.1;
+  speechSynthesis.speak(utter);
+}
+
 function loadState() {
   let raw = null;
   try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { /* ignore */ }
@@ -157,6 +195,7 @@ function renderCard() {
   requestAnimationFrame(() => {
     els.flashcard.classList.remove('no-transition');
   });
+  speakSpanish(word.es);
 
   const cc = getCorrectCount(word.id);
   els.cardMastery.textContent = `התקדמות: ${cc}/${MASTERY_TARGET}`;
@@ -255,7 +294,7 @@ function cacheEls() {
     'startSessionBtn', 'resetBtn', 'statsBtn', 'statsModal', 'closeStats', 'statsGrid',
     'exitSessionBtn', 'sessionProgressFill', 'sessionDone', 'sessionTotal', 'streakBadge',
     'flashcard', 'wordEs', 'wordHe', 'cardMastery', 'answerButtons', 'btnWrong', 'btnCorrect',
-    'doneCorrectFirst', 'doneMasteredNow', 'nextSessionBtn', 'backHomeBtn',
+    'doneCorrectFirst', 'doneMasteredNow', 'nextSessionBtn', 'backHomeBtn', 'speakBtn',
   ].forEach(id => { els[id] = document.getElementById(id); });
 }
 
@@ -268,6 +307,10 @@ function wireEvents() {
   });
 
   els.flashcard.addEventListener('click', revealCard);
+  els.speakBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (session && session.currentId != null) speakSpanish(session.byId[session.currentId].es);
+  });
 
   els.btnWrong.addEventListener('click', (e) => { e.stopPropagation(); if (session.revealed) answerWrong(); });
   els.btnCorrect.addEventListener('click', (e) => { e.stopPropagation(); if (session.revealed) answerCorrect(); });

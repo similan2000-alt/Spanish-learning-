@@ -277,6 +277,24 @@ body {
   line-height: 1.3;
   word-break: break-word;
 }
+
+.speak-btn {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  border: none;
+  background: rgba(255,255,255,0.35);
+  color: inherit;
+  font-size: 20px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.speak-btn:active { transform: scale(0.92); }
 #wordEs { direction: ltr; }
 #wordHe { direction: rtl; }
 
@@ -446,6 +464,7 @@ body {
       <div class="flashcard" id="flashcard">
         <div class="card-face card-front">
           <span class="card-lang-tag tag-blue">ES</span>
+          <button id="speakBtn" class="speak-btn" aria-label="השמע הגייה">🔊</button>
           <div class="card-word" id="wordEs">palabra</div>
           <div class="tap-hint">הקש כדי לראות את התרגום 👆</div>
         </div>
@@ -3516,6 +3535,44 @@ const SESSION_SIZE = 15;
 const REQUEUE_GAP = 2; // wrong answers reappear after this many other cards
 const INITIAL_UNLOCK = 20;
 
+// ---- Spanish pronunciation (Web Speech API, female voice preferred) ----
+let cachedSpanishVoice = null;
+let spanishVoiceReady = false;
+
+function pickSpanishVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = speechSynthesis.getVoices();
+  const esVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('es'));
+  if (!esVoices.length) return null;
+  const femaleHints = ['female', 'mujer', 'woman', 'monica', 'mónica', 'paulina', 'lucia', 'lucía', 'esperanza', 'elena', 'conchita', 'camila'];
+  const female = esVoices.find(v => femaleHints.some(hint => v.name.toLowerCase().includes(hint)));
+  return female || esVoices[0];
+}
+
+function refreshSpanishVoice() {
+  const voice = pickSpanishVoice();
+  if (voice) {
+    cachedSpanishVoice = voice;
+    spanishVoiceReady = true;
+  }
+}
+
+if ('speechSynthesis' in window) {
+  refreshSpanishVoice();
+  speechSynthesis.onvoiceschanged = refreshSpanishVoice;
+}
+
+function speakSpanish(text) {
+  if (!('speechSynthesis' in window) || !text) return;
+  speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = cachedSpanishVoice ? cachedSpanishVoice.lang : 'es-ES';
+  if (cachedSpanishVoice) utter.voice = cachedSpanishVoice;
+  utter.rate = 0.9;
+  utter.pitch = 1.1;
+  speechSynthesis.speak(utter);
+}
+
 function loadState() {
   let raw = null;
   try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { /* ignore */ }
@@ -3666,6 +3723,7 @@ function renderCard() {
   requestAnimationFrame(() => {
     els.flashcard.classList.remove('no-transition');
   });
+  speakSpanish(word.es);
 
   const cc = getCorrectCount(word.id);
   els.cardMastery.textContent = `התקדמות: ${cc}/${MASTERY_TARGET}`;
@@ -3764,7 +3822,7 @@ function cacheEls() {
     'startSessionBtn', 'resetBtn', 'statsBtn', 'statsModal', 'closeStats', 'statsGrid',
     'exitSessionBtn', 'sessionProgressFill', 'sessionDone', 'sessionTotal', 'streakBadge',
     'flashcard', 'wordEs', 'wordHe', 'cardMastery', 'answerButtons', 'btnWrong', 'btnCorrect',
-    'doneCorrectFirst', 'doneMasteredNow', 'nextSessionBtn', 'backHomeBtn',
+    'doneCorrectFirst', 'doneMasteredNow', 'nextSessionBtn', 'backHomeBtn', 'speakBtn',
   ].forEach(id => { els[id] = document.getElementById(id); });
 }
 
@@ -3777,6 +3835,10 @@ function wireEvents() {
   });
 
   els.flashcard.addEventListener('click', revealCard);
+  els.speakBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (session && session.currentId != null) speakSpanish(session.byId[session.currentId].es);
+  });
 
   els.btnWrong.addEventListener('click', (e) => { e.stopPropagation(); if (session.revealed) answerWrong(); });
   els.btnCorrect.addEventListener('click', (e) => { e.stopPropagation(); if (session.revealed) answerCorrect(); });
