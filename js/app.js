@@ -36,25 +36,24 @@ if ('speechSynthesis' in window) {
 
 function speakSpanish(text) {
   if (!('speechSynthesis' in window) || !text) return;
-  // Some Android browsers hang or drop later calls if cancel() and speak()
-  // are invoked back-to-back synchronously. Only cancel when something is
-  // actually still playing, run it on the next tick so it never blocks the
-  // card/session flow, and never let a speech error break the app.
-  setTimeout(() => {
-    try {
-      if (speechSynthesis.speaking || speechSynthesis.pending) {
-        speechSynthesis.cancel();
-      }
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = cachedSpanishVoice ? cachedSpanishVoice.lang : 'es-ES';
-      if (cachedSpanishVoice) utter.voice = cachedSpanishVoice;
-      utter.rate = 0.9;
-      utter.pitch = 1.1;
-      speechSynthesis.speak(utter);
-    } catch (e) {
-      /* ignore - pronunciation is a nice-to-have, never block the app */
+  // Must run synchronously inside the user-gesture call stack (click/tap) -
+  // Android Chrome silently blocks speech that's deferred via setTimeout or
+  // any other async hop. Only cancel when something is actually still
+  // playing (rapid cancel+speak back-to-back is what hung some devices),
+  // and never let a speech error break the rest of the app.
+  try {
+    if (speechSynthesis.speaking || speechSynthesis.pending) {
+      speechSynthesis.cancel();
     }
-  }, 0);
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = cachedSpanishVoice ? cachedSpanishVoice.lang : 'es-ES';
+    if (cachedSpanishVoice) utter.voice = cachedSpanishVoice;
+    utter.rate = 0.9;
+    utter.pitch = 1.1;
+    speechSynthesis.speak(utter);
+  } catch (e) {
+    /* ignore - pronunciation is a nice-to-have, never block the app */
+  }
 }
 
 function loadState() {
