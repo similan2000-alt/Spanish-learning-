@@ -38,13 +38,12 @@ function speakSpanish(text) {
   if (!('speechSynthesis' in window) || !text) return;
   // Must run synchronously inside the user-gesture call stack (click/tap) -
   // Android Chrome silently blocks speech that's deferred via setTimeout or
-  // any other async hop. Only cancel when something is actually still
-  // playing (rapid cancel+speak back-to-back is what hung some devices),
-  // and never let a speech error break the rest of the app.
+  // any other async hop. speechSynthesis.cancel() is deliberately never
+  // called here - on some Android devices it hangs the page when invoked
+  // back-to-back with speak(), which is what broke advancing between cards.
+  // speak() queues on its own, so skipping cancel() just means a still-
+  // playing word finishes before the next one starts.
   try {
-    if (speechSynthesis.speaking || speechSynthesis.pending) {
-      speechSynthesis.cancel();
-    }
     const utter = new SpeechSynthesisUtterance(text);
     utter.lang = cachedSpanishVoice ? cachedSpanishVoice.lang : 'es-ES';
     if (cachedSpanishVoice) utter.voice = cachedSpanishVoice;
