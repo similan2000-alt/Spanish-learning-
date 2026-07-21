@@ -3,14 +3,14 @@
 // Reuses showScreen()/shuffle() from app.js (loaded first) and the geo paths
 // from js/mapgame-data.js.
 
-const MAP_STORAGE_KEY = 'mapGamesState_v1';
-const POOL_SIZE = 10;
+const MAP_STORAGE_KEY = 'mapGamesState_v2';
+const POOL_SIZE = 4;
 
 const MAP_CATEGORIES = [
   { key: 'israel_cities', name: 'ערי ישראל', emoji: '🏙️', color: 'cat-cyan' },
   { key: 'europe', name: 'מדינות אירופה', emoji: '🇪🇺', color: 'cat-blue' },
-  { key: 'north_america', name: 'אמריקה הצפונית', emoji: '🌎', color: 'cat-yellow' },
-  { key: 'latin_america', name: 'אמריקה הלטינית', emoji: '🌎', color: 'cat-green' },
+  { key: 'us_states', name: 'מדינות ארה"ב', emoji: '🇺🇸', color: 'cat-yellow' },
+  { key: 'south_america', name: 'דרום אמריקה', emoji: '🌎', color: 'cat-green' },
   { key: 'asia', name: 'מדינות אסיה', emoji: '🌏', color: 'cat-cyan' },
   { key: 'africa', name: 'מדינות אפריקה', emoji: '🌍', color: 'cat-blue' },
 ];
@@ -56,6 +56,106 @@ function openMapGames() {
   renderMapCategoryGrid();
   showScreen('map-categories');
 }
+
+// ---- Pinch-zoom / pan controller for the map SVG ----
+// Keeps a translate+scale transform on the inner <g>, driven by Pointer
+// Events so mouse drag, wheel, and touch pinch all go through the same math.
+function createPanZoom(svg, group) {
+  const MIN_SCALE = 1;
+  const MAX_SCALE = 20;
+  let scale = 1, tx = 0, ty = 0;
+  const pointers = new Map();
+  let lastDist = 0, lastMid = null;
+
+  function apply() {
+    group.setAttribute('transform', `translate(${tx} ${ty}) scale(${scale})`);
+  }
+  function reset() {
+    scale = 1; tx = 0; ty = 0; apply();
+  }
+  function fitScale() {
+    const rect = svg.getBoundingClientRect();
+    const vb = svg.viewBox.baseVal;
+    if (!rect.width || !rect.height || !vb.width || !vb.height) return 1;
+    return Math.min(rect.width / vb.width, rect.height / vb.height);
+  }
+  // Client (screen) point -> SVG viewBox-space point, ignoring our own
+  // translate/scale (i.e. the space the group's transform is defined in).
+  function svgPointFromClient(clientX, clientY) {
+    const rect = svg.getBoundingClientRect();
+    const vb = svg.viewBox.baseVal;
+    const fs = fitScale();
+    const offsetX = (rect.width - vb.width * fs) / 2;
+    const offsetY = (rect.height - vb.height * fs) / 2;
+    return {
+      x: vb.x + (clientX - rect.left - offsetX) / fs,
+      y: vb.y + (clientY - rect.top - offsetY) / fs,
+    };
+  }
+  function zoomAt(clientX, clientY, factor) {
+    const before = svgPointFromClient(clientX, clientY);
+    const oldScale = scale;
+    scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * factor));
+    const applied = scale / oldScale;
+    tx = tx * applied + before.x * (1 - applied);
+    ty = ty * applied + before.y * (1 - applied);
+    apply();
+  }
+  function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+  function mid(a, b) { return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }; }
+
+  svg.addEventListener('pointerdown', (e) => {
+    try { svg.setPointerCapture(e.pointerId); } catch (err) { /* not a capturable pointer (e.g. synthetic) - ignore */ }
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      lastDist = dist(a, b);
+      lastMid = mid(a, b);
+    }
+  });
+
+  svg.addEventListener('pointermove', (e) => {
+    if (!pointers.has(e.pointerId)) return;
+    const prev = pointers.get(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const fs = fitScale();
+
+    if (pointers.size === 1) {
+      tx += (e.clientX - prev.x) / fs;
+      ty += (e.clientY - prev.y) / fs;
+      apply();
+    } else if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const newDist = dist(a, b);
+      const newMid = mid(a, b);
+      if (lastDist > 0) zoomAt(newMid.x, newMid.y, newDist / lastDist);
+      if (lastMid) {
+        tx += (newMid.x - lastMid.x) / fs;
+        ty += (newMid.y - lastMid.y) / fs;
+        apply();
+      }
+      lastDist = newDist;
+      lastMid = newMid;
+    }
+  });
+
+  function endPointer(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) { lastDist = 0; lastMid = null; }
+  }
+  svg.addEventListener('pointerup', endPointer);
+  svg.addEventListener('pointercancel', endPointer);
+  svg.addEventListener('pointerleave', endPointer);
+
+  svg.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1.15 : 1 / 1.15);
+  }, { passive: false });
+
+  return { reset };
+}
+
+let mapPanZoom = null;
 
 // ---- Game runtime ----
 let mapGame = null; // { key, geo, remaining:[...], pool:[...], target, options, attempts }
@@ -103,8 +203,9 @@ function updateMapHeader() {
 
 function renderMapSvg() {
   const svg = document.getElementById('mapSvg');
+  const group = document.getElementById('mapZoomG');
   svg.setAttribute('viewBox', mapGame.geo.viewBox);
-  svg.innerHTML = '';
+  group.innerHTML = '';
   const st = ensureCatState(mapGame.key);
   const solvedSet = new Set(st.solvedIds);
 
@@ -130,7 +231,10 @@ function renderMapSvg() {
     outline.setAttribute('class', 'map-outline');
     frag.appendChild(outline);
   }
-  svg.appendChild(frag);
+  group.appendChild(frag);
+
+  if (!mapPanZoom) mapPanZoom = createPanZoom(svg, group);
+  mapPanZoom.reset();
 }
 
 function setTargetHighlight(id) {
@@ -139,31 +243,15 @@ function setTargetHighlight(id) {
   });
 }
 
-function zoomToFull() {
-  document.getElementById('mapSvg').setAttribute('viewBox', mapGame.geo.viewBox);
-}
-
-function zoomToTarget(id) {
-  const svg = document.getElementById('mapSvg');
-  const el = svg.querySelector(`path[data-id="${id}"]`);
-  if (!el) return;
-  const bbox = el.getBBox();
-  const [, , fullW, fullH] = mapGame.geo.viewBox.split(' ').map(Number);
-  const minSide = Math.max(fullW, fullH) * 0.08;
-  const side = Math.max(Math.max(bbox.width, bbox.height) * 2.6, minSide);
-  const cx = bbox.x + bbox.width / 2;
-  const cy = bbox.y + bbox.height / 2;
-  svg.setAttribute('viewBox', `${(cx - side / 2).toFixed(1)} ${(cy - side / 2).toFixed(1)} ${side.toFixed(1)} ${side.toFixed(1)}`);
-}
-
 function buildMapOptions(target) {
+  const size = Math.min(POOL_SIZE, mapGame.geo.items.length);
   const names = new Set([target.name]);
   shuffle(mapGame.pool.filter((it) => it.id !== target.id)).forEach((it) => {
-    if (names.size < Math.min(POOL_SIZE, mapGame.geo.items.length)) names.add(it.name);
+    if (names.size < size) names.add(it.name);
   });
-  if (names.size < Math.min(POOL_SIZE, mapGame.geo.items.length)) {
+  if (names.size < size) {
     shuffle(mapGame.geo.items.filter((it) => !names.has(it.name))).forEach((it) => {
-      if (names.size < Math.min(POOL_SIZE, mapGame.geo.items.length)) names.add(it.name);
+      if (names.size < size) names.add(it.name);
     });
   }
   return shuffle([...names]);
@@ -178,7 +266,7 @@ function nextMapQuestion() {
   mapGame.options = buildMapOptions(target);
 
   setTargetHighlight(target.id);
-  zoomToTarget(target.id);
+  if (mapPanZoom) mapPanZoom.reset();
   document.getElementById('mapFeedback').textContent = '';
   document.getElementById('mapFeedback').className = 'map-feedback';
   renderMapOptions();
@@ -216,7 +304,6 @@ function handleMapOptionClick(name, btn) {
     mapGame.pool = mapGame.pool.filter((it) => it.id !== mapGame.target.id);
 
     renderMapSvg();
-    zoomToFull();
     updateMapHeader();
 
     setTimeout(() => {
@@ -255,5 +342,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('mapPlayAgainBtn').addEventListener('click', () => {
     resetMapCategory(mapGame.key);
     startMapCategory(mapGame.key);
+  });
+  document.getElementById('mapResetViewBtn').addEventListener('click', () => {
+    if (mapPanZoom) mapPanZoom.reset();
   });
 });
