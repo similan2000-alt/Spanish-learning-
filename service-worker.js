@@ -1,6 +1,6 @@
 // Offline cache so the app still works without network on Android.
 // Bump CACHE_NAME whenever assets change - see the fetch handler below for why.
-const CACHE_NAME = 'es-he-flashcards-v2';
+const CACHE_NAME = 'es-he-flashcards-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,8 @@ const ASSETS = [
   './css/style.css',
   './js/words.js',
   './js/app.js',
+  './js/mapgame-data.js',
+  './js/mapgame.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
 ];
