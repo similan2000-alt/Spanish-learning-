@@ -1,6 +1,6 @@
 // Offline cache so the app still works without network on Android.
 // Bump CACHE_NAME whenever assets change - see the fetch handler below for why.
-const CACHE_NAME = 'es-he-flashcards-v2';
+const CACHE_NAME = 'es-he-flashcards-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -31,9 +31,12 @@ self.addEventListener('fetch', (event) => {
   // Network-first: always prefer the latest deployed version while online,
   // and only fall back to the cache when there's no connection. A cache-first
   // strategy here would silently keep serving whatever was cached on first
-  // visit forever, hiding every future update.
+  // visit forever, hiding every future update. { cache: 'no-store' } also
+  // bypasses the browser's own HTTP disk cache, not just our Cache Storage -
+  // otherwise GitHub Pages' Cache-Control headers can still serve a stale
+  // response for a while even with the network-first logic above.
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-store' })
       .then((response) => {
         if (response && response.status === 200) {
           const clone = response.clone();
