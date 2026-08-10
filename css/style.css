@@ -374,7 +374,11 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   direction: ltr;
+  cursor: pointer;
+  user-select: none;
 }
+.word-cell:active { transform: scale(0.95); }
+.word-cell.cell-flipped { direction: rtl; box-shadow: inset 0 0 0 2px var(--blue); }
 .cell-mastered { background: var(--green-light); color: var(--green-dark); font-weight: 700; }
 .cell-progress { background: var(--yellow-light); color: #92400e; font-weight: 700; }
 .cell-locked { background: #eef4fa; color: #93a5b8; }

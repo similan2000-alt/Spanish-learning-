@@ -386,7 +386,11 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
   direction: ltr;
+  cursor: pointer;
+  user-select: none;
 }
+.word-cell:active { transform: scale(0.95); }
+.word-cell.cell-flipped { direction: rtl; box-shadow: inset 0 0 0 2px var(--blue); }
 .cell-mastered { background: var(--green-light); color: var(--green-dark); font-weight: 700; }
 .cell-progress { background: var(--yellow-light); color: #92400e; font-weight: 700; }
 .cell-locked { background: #eef4fa; color: #93a5b8; }
@@ -3812,6 +3816,13 @@ function renderStatsGrid() {
     cell.className = `word-cell ${cls}`;
     cell.textContent = w.es;
     cell.title = `${w.es} — ${w.he} (${cc}/${MASTERY_TARGET})`;
+    cell.dataset.showing = 'es';
+    cell.addEventListener('click', () => {
+      const showingHe = cell.dataset.showing === 'es';
+      cell.dataset.showing = showingHe ? 'he' : 'es';
+      cell.textContent = showingHe ? w.he : w.es;
+      cell.classList.toggle('cell-flipped', showingHe);
+    });
     frag.appendChild(cell);
   });
   els.statsGrid.appendChild(frag);

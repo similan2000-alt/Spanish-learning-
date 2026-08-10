@@ -284,6 +284,13 @@ function renderStatsGrid() {
     cell.className = `word-cell ${cls}`;
     cell.textContent = w.es;
     cell.title = `${w.es} — ${w.he} (${cc}/${MASTERY_TARGET})`;
+    cell.dataset.showing = 'es';
+    cell.addEventListener('click', () => {
+      const showingHe = cell.dataset.showing === 'es';
+      cell.dataset.showing = showingHe ? 'he' : 'es';
+      cell.textContent = showingHe ? w.he : w.es;
+      cell.classList.toggle('cell-flipped', showingHe);
+    });
     frag.appendChild(cell);
   });
   els.statsGrid.appendChild(frag);
