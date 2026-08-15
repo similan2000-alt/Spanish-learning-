@@ -1,0 +1,27 @@
+{
+  "name": "מפה עיוורת - משחק גיאוגרפיה",
+  "short_name": "מפה עיוורת",
+  "description": "משחק זיהוי ערים ומדינות על מפה עיוורת: ערי ישראל, מדינות אירופה, מדינות ארה\"ב, דרום אמריקה, אסיה ואפריקה",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#cffafe",
+  "theme_color": "#22d3ee",
+  "dir": "rtl",
+  "lang": "he",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

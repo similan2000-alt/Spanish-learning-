@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#22d3ee">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="מפה עיוורת">
+<title>מפה עיוורת - משחק גיאוגרפיה</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <header class="topbar">
+    <div class="brand">🗺️ מפה עיוורת</div>
+  </header>
+
+  <!-- Category picker (home screen of this app) -->
+  <section id="screen-map-categories" class="screen active">
+    <p class="mapgame-sub">בחרו קטגוריה כדי להתחיל</p>
+    <div class="map-category-grid" id="mapCategoryGrid"></div>
+  </section>
+
+  <!-- Question screen -->
+  <section id="screen-map-game" class="screen">
+    <div class="mapgame-topline">
+      <button id="mapGameExitBtn" class="icon-btn" aria-label="יציאה">✕</button>
+      <div class="mapgame-headinfo">
+        <div class="mapgame-cat-name" id="mapGameCatName"></div>
+        <div class="mapgame-progress-text"><span id="mapGameSolved">0</span>/<span id="mapGameTotal">0</span> נפתרו</div>
+      </div>
+      <div class="mapgame-score-badge" id="mapGameScore">0 נק׳</div>
+    </div>
+    <div class="map-stage">
+      <svg id="mapSvg" class="map-svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet">
+        <g id="mapZoomG"></g>
+      </svg>
+      <button id="mapResetViewBtn" class="map-reset-btn" aria-label="איפוס תצוגה">⤢</button>
+    </div>
+    <div class="map-question-area">
+      <div class="map-question-row">
+        <div class="map-question-text">מהו האזור המודגש במפה?</div>
+        <div class="map-feedback" id="mapFeedback"></div>
+      </div>
+      <div class="map-options-grid" id="mapOptionsGrid"></div>
+    </div>
+  </section>
+
+  <!-- Category complete -->
+  <section id="screen-map-complete" class="screen">
+    <div class="hero-card complete-card">
+      <div class="complete-emoji">🏆</div>
+      <h1>כל הכבוד!</h1>
+      <p id="mapCompleteCatName"></p>
+      <div class="home-stats">
+        <div class="stat-pill pill-cyan">
+          <span class="stat-num" id="mapCompleteScore">0</span>
+          <span class="stat-label">נקודות בקטגוריה</span>
+        </div>
+      </div>
+      <button id="mapPlayAgainBtn" class="btn btn-primary btn-big">שחקו שוב</button>
+      <button id="mapBackToCategoriesBtn" class="btn btn-ghost">לקטגוריות המשחק</button>
+    </div>
+  </section>
+
+</div>
+
+<script src="js/mapgame-data.js"></script>
+<script src="js/mapgame.js"></script>
+</body>
+</html>

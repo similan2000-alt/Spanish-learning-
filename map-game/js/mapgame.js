@@ -1,7 +1,6 @@
-// Blind-map geography game: pick a category (Israeli cities or a continent's
-// countries), guess the highlighted region from a rotating pool of choices.
-// Reuses showScreen()/shuffle() from app.js (loaded first) and the geo paths
-// from js/mapgame-data.js.
+// Blind-map geography game (standalone app): pick a category (Israeli
+// cities or a continent's countries), guess the highlighted region from a
+// rotating pool of choices. Reads geo paths from js/mapgame-data.js.
 
 const MAP_STORAGE_KEY = 'mapGamesState_v2';
 const POOL_SIZE = 4;
@@ -14,6 +13,20 @@ const MAP_CATEGORIES = [
   { key: 'asia', name: 'מדינות אסיה', emoji: '🌏', color: 'cat-cyan' },
   { key: 'africa', name: 'מדינות אפריקה', emoji: '🌍', color: 'cat-blue' },
 ];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach((s) => s.classList.remove('active'));
+  document.getElementById(`screen-${name}`).classList.add('active');
+}
 
 function loadMapState() {
   let raw = null;
@@ -55,7 +68,6 @@ function renderMapCategoryGrid() {
 function openMapGames() {
   renderMapCategoryGrid();
   showScreen('map-categories');
-  if (location.hash !== '#map') history.replaceState(null, '', '#map');
 }
 
 // ---- Pinch-zoom / pan controller for the map SVG ----
@@ -334,11 +346,8 @@ function resetMapCategory(key) {
 
 // ---- DOM wiring ----
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('openMapGamesBtn').addEventListener('click', openMapGames);
-  document.getElementById('mapCategoriesBackBtn').addEventListener('click', () => {
-    showScreen('home');
-    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-  });
+  openMapGames();
+
   document.getElementById('mapGameExitBtn').addEventListener('click', () => {
     if (confirm('לצאת מהמשחק? ההתקדמות שנשמרה עד כה תישאר.')) openMapGames();
   });
@@ -351,8 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (mapPanZoom) mapPanZoom.reset();
   });
 
-  // Deep link: opening the app with #map jumps straight into the map game
-  // category picker instead of the flashcards home screen, so the game can
-  // be shared with a link of its own.
-  if (location.hash === '#map') openMapGames();
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  }
 });
