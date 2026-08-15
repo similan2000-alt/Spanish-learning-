@@ -55,6 +55,7 @@ function renderMapCategoryGrid() {
 function openMapGames() {
   renderMapCategoryGrid();
   showScreen('map-categories');
+  if (location.hash !== '#map') history.replaceState(null, '', '#map');
 }
 
 // ---- Pinch-zoom / pan controller for the map SVG ----
@@ -334,7 +335,10 @@ function resetMapCategory(key) {
 // ---- DOM wiring ----
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('openMapGamesBtn').addEventListener('click', openMapGames);
-  document.getElementById('mapCategoriesBackBtn').addEventListener('click', () => showScreen('home'));
+  document.getElementById('mapCategoriesBackBtn').addEventListener('click', () => {
+    showScreen('home');
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  });
   document.getElementById('mapGameExitBtn').addEventListener('click', () => {
     if (confirm('לצאת מהמשחק? ההתקדמות שנשמרה עד כה תישאר.')) openMapGames();
   });
@@ -346,4 +350,9 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('mapResetViewBtn').addEventListener('click', () => {
     if (mapPanZoom) mapPanZoom.reset();
   });
+
+  // Deep link: opening the app with #map jumps straight into the map game
+  // category picker instead of the flashcards home screen, so the game can
+  // be shared with a link of its own.
+  if (location.hash === '#map') openMapGames();
 });
