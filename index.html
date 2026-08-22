@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#2196F3">
+<meta name="theme-color" content="#22c55e">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="קלפי ספרדית">
-<title>קלפי ספרדית - למידת 500 מילים</title>
+<meta name="apple-mobile-web-app-title" content="משחק הזכרון">
+<title>משחק הזכרון</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -19,110 +19,47 @@
 <div id="app">
 
   <header class="topbar">
-    <div class="brand">🇪🇸 ➜ 🇮🇱 קלפי ספרדית</div>
-    <button id="statsBtn" class="icon-btn" aria-label="סטטיסטיקה">📊</button>
+    <div class="brand">🧠 משחק הזכרון</div>
+    <div class="moves-pill">מהלכים: <span id="movesVal">0</span></div>
   </header>
 
-  <!-- Home / start screen -->
+  <!-- Home screen -->
   <section id="screen-home" class="screen active">
     <div class="hero-card">
-      <h1>ברוכים הבאים!</h1>
-      <p>למדו 500 המילים החשובות בספרדית, קלף אחרי קלף.</p>
-      <div class="home-stats">
-        <div class="stat-pill pill-cyan">
-          <span class="stat-num" id="homeMastered">0</span>
-          <span class="stat-label">מילים ידועות</span>
-        </div>
-        <div class="stat-pill pill-yellow">
-          <span class="stat-num" id="homeInProgress">0</span>
-          <span class="stat-label">בתהליך לימוד</span>
-        </div>
-        <div class="stat-pill pill-green">
-          <span class="stat-num" id="homeUnlocked">0</span>
-          <span class="stat-label">מילים נפתחו</span>
-        </div>
-      </div>
-      <div class="progress-track" aria-hidden="true">
-        <div class="progress-fill" id="homeProgressFill"></div>
-      </div>
-      <button id="startSessionBtn" class="btn btn-primary btn-big">התחל סשן לימוד (15 מילים)</button>
-      <button id="resetBtn" class="btn btn-ghost">איפוס התקדמות</button>
+      <h1>משחק הזכרון</h1>
+      <p>מצאו את הזוגות הזהים! המשחק כולל 4 שלבי התקדמות, מהקטן לגדול.</p>
+      <div class="stage-list" id="stageList"></div>
+      <button id="startBtn" class="btn btn-primary btn-big">התחילו במשחק 🎮</button>
     </div>
   </section>
 
-  <!-- Session screen -->
-  <section id="screen-session" class="screen">
-    <div class="session-topline">
-      <button id="exitSessionBtn" class="icon-btn" aria-label="יציאה">✕</button>
-      <div class="session-progress-wrap">
-        <div class="session-progress-track">
-          <div class="session-progress-fill" id="sessionProgressFill"></div>
-        </div>
-        <div class="session-progress-text"><span id="sessionDone">0</span>/<span id="sessionTotal">15</span> הושלמו</div>
-      </div>
-      <div class="streak-badge" id="streakBadge">🔥 0</div>
+  <!-- Game screen -->
+  <section id="screen-game" class="screen">
+    <div class="game-topline">
+      <button id="exitGameBtn" class="icon-btn" aria-label="יציאה">✕</button>
+      <div class="stage-label" id="stageLabel"></div>
+      <div class="pairs-label"><span id="pairsFoundVal">0</span>/<span id="pairsTotalVal">0</span> זוגות</div>
     </div>
 
-    <div class="card-stage">
-      <div class="flashcard" id="flashcard">
-        <div class="card-face card-front">
-          <span class="card-lang-tag tag-blue">ES</span>
-          <button id="speakBtn" class="speak-btn" aria-label="השמע הגייה">🔊</button>
-          <div class="card-word" id="wordEs">palabra</div>
-          <div class="tap-hint">הקש כדי לראות את התרגום 👆</div>
-        </div>
-        <div class="card-face card-back">
-          <span class="card-lang-tag tag-yellow">HE</span>
-          <div class="card-word" id="wordHe">מילה</div>
-          <div class="card-mastery" id="cardMastery"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="answer-buttons" id="answerButtons">
-      <button id="btnWrong" class="btn btn-wrong">❌ טעיתי</button>
-      <button id="btnCorrect" class="btn btn-correct">✅ ידעתי!</button>
-    </div>
+    <div class="board" id="board"></div>
   </section>
 
-  <!-- Session complete screen -->
-  <section id="screen-complete" class="screen">
-    <div class="hero-card complete-card">
-      <div class="complete-emoji">🎉</div>
-      <h1>כל הכבוד!</h1>
-      <p>סיימת סשן לימוד של 15 מילים.</p>
-      <div class="home-stats">
-        <div class="stat-pill pill-green">
-          <span class="stat-num" id="doneCorrectFirst">0</span>
-          <span class="stat-label">נכון בפעם הראשונה</span>
-        </div>
-        <div class="stat-pill pill-cyan">
-          <span class="stat-num" id="doneMasteredNow">0</span>
-          <span class="stat-label">מילים חדשות שנלמדו לגמרי</span>
-        </div>
-      </div>
-      <button id="nextSessionBtn" class="btn btn-primary btn-big">סשן נוסף</button>
-      <button id="backHomeBtn" class="btn btn-ghost">חזרה למסך הבית</button>
-    </div>
-  </section>
-
-  <!-- Stats modal -->
-  <div id="statsModal" class="modal">
-    <div class="modal-card">
-      <button id="closeStats" class="icon-btn modal-close" aria-label="סגור">✕</button>
-      <h2>ההתקדמות שלי</h2>
-      <div class="stats-grid" id="statsGrid"></div>
-      <div class="legend">
-        <span><i class="dot dot-green"></i> ידוע (5/5)</span>
-        <span><i class="dot dot-yellow"></i> בתהליך</span>
-        <span><i class="dot dot-blue"></i> טרם נפתח</span>
+  <!-- Result overlay -->
+  <div id="resultOverlay" class="overlay">
+    <div class="result-card">
+      <div class="result-emoji" id="resultEmoji">🎉</div>
+      <h2 id="resultTitle">כל הכבוד!</h2>
+      <p id="resultText"></p>
+      <div class="result-actions">
+        <button id="nextStageBtn" class="btn btn-primary btn-big">לשלב הבא</button>
+        <button id="backHomeBtn" class="btn btn-ghost">חזרה לתפריט</button>
       </div>
     </div>
   </div>
 
 </div>
 
-<script src="js/words.js"></script>
-<script src="js/app.js"></script>
+<script src="js/memory-data.js"></script>
+<script src="js/memory-game.js"></script>
 </body>
 </html>

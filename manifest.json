@@ -1,13 +1,13 @@
 {
-  "name": "קלפי ספרדית - 500 מילים",
-  "short_name": "קלפי ספרדית",
-  "description": "למידת 500 המילים החשובות בספרדית עם תרגום לעברית, בשיטת קלפים חוזרים",
+  "name": "משחק הזכרון",
+  "short_name": "משחק הזכרון",
+  "description": "משחק זיכרון עם 4 שלבי התקדמות (2×3, 4×4, 4×6, 6×6) - מצאו את כל הזוגות הזהים",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#dbeafe",
-  "theme_color": "#2196F3",
+  "background_color": "#f0fdf4",
+  "theme_color": "#22c55e",
   "dir": "rtl",
   "lang": "he",
   "icons": [

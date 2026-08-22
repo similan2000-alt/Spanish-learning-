@@ -1,13 +1,12 @@
-// Offline cache so the app still works without network on Android.
-// Bump CACHE_NAME whenever assets change - see the fetch handler below for why.
-const CACHE_NAME = 'es-he-flashcards-v3';
+// Offline cache for the standalone memory game.
+const CACHE_NAME = 'memory-game-v1';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './css/style.css',
-  './js/words.js',
-  './js/app.js',
+  './js/memory-data.js',
+  './js/memory-game.js',
   './icons/icon-192.png',
   './icons/icon-512.png',
 ];
@@ -28,15 +27,8 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
-  // Network-first: always prefer the latest deployed version while online,
-  // and only fall back to the cache when there's no connection. A cache-first
-  // strategy here would silently keep serving whatever was cached on first
-  // visit forever, hiding every future update. { cache: 'no-store' } also
-  // bypasses the browser's own HTTP disk cache, not just our Cache Storage -
-  // otherwise GitHub Pages' Cache-Control headers can still serve a stale
-  // response for a while even with the network-first logic above.
   event.respondWith(
-    fetch(event.request, { cache: 'no-store' })
+    fetch(event.request)
       .then((response) => {
         if (response && response.status === 200) {
           const clone = response.clone();
