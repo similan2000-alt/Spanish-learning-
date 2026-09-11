@@ -1,5 +1,5 @@
 // Offline cache for the standalone blind-map game.
-const CACHE_NAME = 'map-game-v1';
+const CACHE_NAME = 'map-game-v2';
 const ASSETS = [
   './',
   './index.html',
