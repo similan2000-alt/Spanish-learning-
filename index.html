@@ -29,6 +29,10 @@
     <div class="hero-card">
       <h1>ברוכים הבאים!</h1>
       <p>למדו 500 המילים החשובות בספרדית, קלף אחרי קלף.</p>
+      <div class="direction-toggle" role="group" aria-label="בחירת כיוון לימוד">
+        <button id="dirEs2He" class="direction-btn active">🇪🇸 ➜ 🇮🇱 לימוד ספרדית</button>
+        <button id="dirHe2Es" class="direction-btn">🇮🇱 ➜ 🇪🇸 לימוד עברית</button>
+      </div>
       <div class="home-stats">
         <div class="stat-pill pill-cyan">
           <span class="stat-num" id="homeMastered">0</span>
@@ -67,14 +71,14 @@
     <div class="card-stage">
       <div class="flashcard" id="flashcard">
         <div class="card-face card-front">
-          <span class="card-lang-tag tag-blue">ES</span>
+          <span class="card-lang-tag tag-blue" id="cardTagFront">ES</span>
           <button id="speakBtn" class="speak-btn" aria-label="השמע הגייה">🔊</button>
-          <div class="card-word" id="wordEs">palabra</div>
+          <div class="card-word" id="wordFront">palabra</div>
           <div class="tap-hint">הקש כדי לראות את התרגום 👆</div>
         </div>
         <div class="card-face card-back">
-          <span class="card-lang-tag tag-yellow">HE</span>
-          <div class="card-word" id="wordHe">מילה</div>
+          <span class="card-lang-tag tag-yellow" id="cardTagBack">HE</span>
+          <div class="card-word" id="wordBack">מילה</div>
           <div class="card-mastery" id="cardMastery"></div>
         </div>
       </div>

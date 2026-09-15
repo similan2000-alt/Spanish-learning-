@@ -7,34 +7,34 @@ const SESSION_SIZE = 15;
 const REQUEUE_GAP = 2; // wrong answers reappear after this many other cards
 const INITIAL_UNLOCK = 20;
 
-// ---- Spanish pronunciation (Web Speech API, female voice preferred) ----
-let cachedSpanishVoice = null;
-let spanishVoiceReady = false;
+// ---- Pronunciation (Web Speech API, female voice preferred) ----
+// Supports both directions: Spanish (es) and Hebrew (he).
+const cachedVoices = { es: null, he: null };
+const FALLBACK_LANG = { es: 'es-ES', he: 'he-IL' };
 
-function pickSpanishVoice() {
+function pickVoiceFor(langPrefix) {
   if (!('speechSynthesis' in window)) return null;
   const voices = speechSynthesis.getVoices();
-  const esVoices = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith('es'));
-  if (!esVoices.length) return null;
-  const femaleHints = ['female', 'mujer', 'woman', 'monica', 'mónica', 'paulina', 'lucia', 'lucía', 'esperanza', 'elena', 'conchita', 'camila'];
-  const female = esVoices.find(v => femaleHints.some(hint => v.name.toLowerCase().includes(hint)));
-  return female || esVoices[0];
+  const matches = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith(langPrefix));
+  if (!matches.length) return null;
+  const femaleHints = ['female', 'mujer', 'woman', 'monica', 'mónica', 'paulina', 'lucia', 'lucía', 'esperanza', 'elena', 'conchita', 'camila', 'carmit', 'sivan', 'noa'];
+  const female = matches.find(v => femaleHints.some(hint => v.name.toLowerCase().includes(hint)));
+  return female || matches[0];
 }
 
-function refreshSpanishVoice() {
-  const voice = pickSpanishVoice();
-  if (voice) {
-    cachedSpanishVoice = voice;
-    spanishVoiceReady = true;
-  }
+function refreshVoices() {
+  const es = pickVoiceFor('es');
+  if (es) cachedVoices.es = es;
+  const he = pickVoiceFor('he');
+  if (he) cachedVoices.he = he;
 }
 
 if ('speechSynthesis' in window) {
-  refreshSpanishVoice();
-  speechSynthesis.onvoiceschanged = refreshSpanishVoice;
+  refreshVoices();
+  speechSynthesis.onvoiceschanged = refreshVoices;
 }
 
-function speakSpanish(text) {
+function speakWord(text, langPrefix) {
   if (!('speechSynthesis' in window) || !text) return;
   // Must run synchronously inside the user-gesture call stack (click/tap) -
   // Android Chrome silently blocks speech that's deferred via setTimeout or
@@ -44,9 +44,10 @@ function speakSpanish(text) {
   // speak() queues on its own, so skipping cancel() just means a still-
   // playing word finishes before the next one starts.
   try {
+    const voice = cachedVoices[langPrefix];
     const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = cachedSpanishVoice ? cachedSpanishVoice.lang : 'es-ES';
-    if (cachedSpanishVoice) utter.voice = cachedSpanishVoice;
+    utter.lang = voice ? voice.lang : FALLBACK_LANG[langPrefix];
+    if (voice) utter.voice = voice;
     utter.rate = 0.9;
     utter.pitch = 1.1;
     speechSynthesis.speak(utter);
@@ -61,10 +62,13 @@ function loadState() {
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.progress) return parsed;
+      if (parsed && parsed.progress) {
+        if (parsed.direction !== 'es2he' && parsed.direction !== 'he2es') parsed.direction = 'es2he';
+        return parsed;
+      }
     } catch (e) { /* fall through to default */ }
   }
-  return { progress: {}, unlockedCount: INITIAL_UNLOCK, sessionsCompleted: 0 };
+  return { progress: {}, unlockedCount: INITIAL_UNLOCK, sessionsCompleted: 0, direction: 'es2he' };
 }
 
 function saveState() {
@@ -200,12 +204,23 @@ function renderCard() {
   els.flashcard.classList.add('no-transition');
   els.flashcard.classList.remove('flipped');
   void els.flashcard.offsetWidth; // force reflow so the instant reset applies
-  els.wordEs.textContent = word.es;
-  els.wordHe.textContent = word.he;
+
+  const isEs2He = state.direction !== 'he2es';
+  const frontText = isEs2He ? word.es : word.he;
+  const backText = isEs2He ? word.he : word.es;
+  const frontLang = isEs2He ? 'es' : 'he';
+
+  els.wordFront.textContent = frontText;
+  els.wordFront.style.direction = isEs2He ? 'ltr' : 'rtl';
+  els.wordBack.textContent = backText;
+  els.wordBack.style.direction = isEs2He ? 'rtl' : 'ltr';
+  els.cardTagFront.textContent = frontLang.toUpperCase();
+  els.cardTagBack.textContent = (isEs2He ? 'he' : 'es').toUpperCase();
+
   requestAnimationFrame(() => {
     els.flashcard.classList.remove('no-transition');
   });
-  speakSpanish(word.es);
+  speakWord(frontText, frontLang);
 
   const cc = getCorrectCount(word.id);
   els.cardMastery.textContent = `התקדמות: ${cc}/${MASTERY_TARGET}`;
@@ -310,8 +325,10 @@ function cacheEls() {
     'homeMastered', 'homeInProgress', 'homeUnlocked', 'homeProgressFill',
     'startSessionBtn', 'resetBtn', 'statsBtn', 'statsModal', 'closeStats', 'statsGrid',
     'exitSessionBtn', 'sessionProgressFill', 'sessionDone', 'sessionTotal', 'streakBadge',
-    'flashcard', 'wordEs', 'wordHe', 'cardMastery', 'answerButtons', 'btnWrong', 'btnCorrect',
+    'flashcard', 'wordFront', 'wordBack', 'cardTagFront', 'cardTagBack', 'cardMastery',
+    'answerButtons', 'btnWrong', 'btnCorrect',
     'doneCorrectFirst', 'doneMasteredNow', 'nextSessionBtn', 'backHomeBtn', 'speakBtn',
+    'dirEs2He', 'dirHe2Es',
   ].forEach(id => { els[id] = document.getElementById(id); });
 }
 
@@ -326,7 +343,11 @@ function wireEvents() {
   els.flashcard.addEventListener('click', revealCard);
   els.speakBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (session && session.currentId != null) speakSpanish(session.byId[session.currentId].es);
+    if (session && session.currentId != null) {
+      const word = session.byId[session.currentId];
+      const isEs2He = state.direction !== 'he2es';
+      speakWord(isEs2He ? word.es : word.he, isEs2He ? 'es' : 'he');
+    }
   });
 
   els.btnWrong.addEventListener('click', (e) => { e.stopPropagation(); if (session.revealed) answerWrong(); });
@@ -336,18 +357,32 @@ function wireEvents() {
   els.closeStats.addEventListener('click', () => els.statsModal.classList.remove('show'));
   els.statsModal.addEventListener('click', (e) => { if (e.target === els.statsModal) els.statsModal.classList.remove('show'); });
 
+  els.dirEs2He.addEventListener('click', () => setDirection('es2he'));
+  els.dirHe2Es.addEventListener('click', () => setDirection('he2es'));
+
   els.resetBtn.addEventListener('click', () => {
     if (confirm('לאפס את כל ההתקדמות ב-500 המילים?')) {
-      state = { progress: {}, unlockedCount: INITIAL_UNLOCK, sessionsCompleted: 0 };
+      state = { progress: {}, unlockedCount: INITIAL_UNLOCK, sessionsCompleted: 0, direction: state.direction };
       saveState();
       refreshHomeStats();
     }
   });
 }
 
+function setDirection(dir) {
+  state.direction = dir;
+  saveState();
+  els.dirEs2He.classList.toggle('active', dir === 'es2he');
+  els.dirHe2Es.classList.toggle('active', dir === 'he2es');
+  els.startSessionBtn.textContent = dir === 'es2he'
+    ? 'התחל סשן לימוד ספרדית (15 מילים)'
+    : 'התחל סשן לימוד עברית (15 מילים)';
+}
+
 function init() {
   cacheEls();
   wireEvents();
+  setDirection(state.direction);
   showScreen('home');
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js').catch(() => {});
