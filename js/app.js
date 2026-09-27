@@ -5,7 +5,117 @@ const STORAGE_KEY = 'esHeFlashcards_v1';
 const MASTERY_TARGET = 5; // times a word must be answered correctly (total) before it's "known"
 const SESSION_SIZE = 15;
 const REQUEUE_GAP = 2; // wrong answers reappear after this many other cards
-const INITIAL_UNLOCK = 20;
+const INITIAL_UNLOCK_WORDS = 20;
+const INITIAL_UNLOCK_PHRASES = 15;
+
+// ---- UI text (interface chrome only - learning content is never translated) ----
+const UI_STRINGS = {
+  he: {
+    docTitle: 'קלפי ספרדית - למידת 500 מילים',
+    brand: '🇪🇸 ➜ 🇮🇱 קלפי ספרדית',
+    homeTitle: 'ברוכים הבאים!',
+    homeIntro: 'למדו 500 המילים החשובות בספרדית או בעברית, קלף אחרי קלף.',
+    dirEs2He: '🇪🇸 ➜ 🇮🇱 לימוד ספרדית',
+    dirHe2Es: '🇮🇱 ➜ 🇪🇸 לימוד עברית',
+    typeWords: 'מילים בודדות',
+    typePhrases: 'ביטויי שיחה',
+    statMastered: 'ידוע/ות',
+    statInProgress: 'בתהליך לימוד',
+    statUnlocked: 'נפתח/ו',
+    resetBtn: 'איפוס התקדמות',
+    resetConfirm: 'לאפס את כל ההתקדמות?',
+    statsBtnAria: 'סטטיסטיקה',
+    langBtnAria: 'שינוי שפת התצוגה',
+    exitAria: 'יציאה',
+    exitConfirm: 'לצאת מהסשן? ההתקדמות שנשמרה עד כה תישאר.',
+    speakAria: 'השמע הגייה',
+    tapHint: 'הקש כדי לראות את התרגום 👆',
+    sessionDoneLabel: 'הושלמו',
+    btnWrong: '❌ טעיתי',
+    btnCorrect: '✅ ידעתי!',
+    completeTitle: 'כל הכבוד!',
+    doneCorrectLabel: 'נכון בפעם הראשונה',
+    nextSessionBtn: 'סשן נוסף',
+    backHomeBtn: 'חזרה למסך הבית',
+    statsTitle: 'ההתקדמות שלי',
+    legendMastered: 'ידוע (5/5)',
+    legendProgress: 'בתהליך',
+    legendLocked: 'טרם נפתח',
+    closeAria: 'סגור',
+  },
+  en: {
+    docTitle: 'Spanish Flashcards - Learn 500 Words',
+    brand: '🇪🇸 ➜ 🇮🇱 Spanish Flashcards',
+    homeTitle: 'Welcome!',
+    homeIntro: 'Learn the 500 most important Spanish words, in Spanish or Hebrew, card by card.',
+    dirEs2He: '🇪🇸 ➜ 🇮🇱 Learn Spanish',
+    dirHe2Es: '🇮🇱 ➜ 🇪🇸 Learn Hebrew',
+    typeWords: 'Single words',
+    typePhrases: 'Conversation phrases',
+    statMastered: 'Mastered',
+    statInProgress: 'In progress',
+    statUnlocked: 'Unlocked',
+    resetBtn: 'Reset progress',
+    resetConfirm: 'Reset all progress?',
+    statsBtnAria: 'Statistics',
+    langBtnAria: 'Change display language',
+    exitAria: 'Exit',
+    exitConfirm: 'Exit the session? Progress saved so far will stay.',
+    speakAria: 'Play pronunciation',
+    tapHint: 'Tap to see the translation 👆',
+    sessionDoneLabel: 'done',
+    btnWrong: "❌ Didn't know",
+    btnCorrect: '✅ Knew it!',
+    completeTitle: 'Well done!',
+    doneCorrectLabel: 'Correct on first try',
+    nextSessionBtn: 'Another session',
+    backHomeBtn: 'Back to home',
+    statsTitle: 'My progress',
+    legendMastered: 'Known (5/5)',
+    legendProgress: 'In progress',
+    legendLocked: 'Not unlocked yet',
+    closeAria: 'Close',
+  },
+};
+
+function activeSet() {
+  return state.contentType === 'phrases' ? PHRASES : WORDS;
+}
+
+// Small runtime-composed strings that depend on the current direction/content
+// type/counts, kept separate from the flat UI_STRINGS swap above.
+function startSessionText() {
+  const isEs2He = state.direction !== 'he2es';
+  const isPhrases = state.contentType === 'phrases';
+  if (state.uiLang === 'en') {
+    const dir = isEs2He ? 'Spanish' : 'Hebrew';
+    const items = isPhrases ? 'phrases' : 'words';
+    return `Start ${dir} session (${SESSION_SIZE} ${items})`;
+  }
+  const dir = isEs2He ? 'ספרדית' : 'עברית';
+  const items = isPhrases ? 'ביטויים' : 'מילים';
+  return `התחל סשן לימוד ${dir} (${SESSION_SIZE} ${items})`;
+}
+
+function completeSubText() {
+  const isPhrases = state.contentType === 'phrases';
+  if (state.uiLang === 'en') {
+    return `You finished a session of ${SESSION_SIZE} ${isPhrases ? 'phrases' : 'words'}.`;
+  }
+  return `סיימת סשן לימוד של ${SESSION_SIZE} ${isPhrases ? 'ביטויים' : 'מילים'}.`;
+}
+
+function doneMasteredLabelText() {
+  const isPhrases = state.contentType === 'phrases';
+  if (state.uiLang === 'en') {
+    return `New ${isPhrases ? 'phrases' : 'words'} fully learned`;
+  }
+  return `${isPhrases ? 'ביטויים' : 'מילים'} חדשים שנלמדו לגמרי`;
+}
+
+function progressLabelText(cc) {
+  return state.uiLang === 'en' ? `Progress: ${cc}/${MASTERY_TARGET}` : `התקדמות: ${cc}/${MASTERY_TARGET}`;
+}
 
 // ---- Pronunciation (Web Speech API, female voice preferred) ----
 // Supports both directions: Spanish (es) and Hebrew (he).
@@ -56,6 +166,17 @@ function speakWord(text, langPrefix) {
   }
 }
 
+function defaultState() {
+  return {
+    progress: {},
+    unlockedCount: { words: INITIAL_UNLOCK_WORDS, phrases: INITIAL_UNLOCK_PHRASES },
+    sessionsCompleted: 0,
+    direction: 'es2he',
+    contentType: 'words',
+    uiLang: 'he',
+  };
+}
+
 function loadState() {
   let raw = null;
   try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) { /* ignore */ }
@@ -64,11 +185,22 @@ function loadState() {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.progress) {
         if (parsed.direction !== 'es2he' && parsed.direction !== 'he2es') parsed.direction = 'es2he';
+        if (parsed.contentType !== 'words' && parsed.contentType !== 'phrases') parsed.contentType = 'words';
+        if (parsed.uiLang !== 'he' && parsed.uiLang !== 'en') parsed.uiLang = 'he';
+        if (typeof parsed.unlockedCount === 'number') {
+          // Migrate from the old single-number shape (words-only).
+          parsed.unlockedCount = { words: parsed.unlockedCount, phrases: INITIAL_UNLOCK_PHRASES };
+        } else if (!parsed.unlockedCount || typeof parsed.unlockedCount !== 'object') {
+          parsed.unlockedCount = { words: INITIAL_UNLOCK_WORDS, phrases: INITIAL_UNLOCK_PHRASES };
+        } else {
+          if (typeof parsed.unlockedCount.words !== 'number') parsed.unlockedCount.words = INITIAL_UNLOCK_WORDS;
+          if (typeof parsed.unlockedCount.phrases !== 'number') parsed.unlockedCount.phrases = INITIAL_UNLOCK_PHRASES;
+        }
         return parsed;
       }
     } catch (e) { /* fall through to default */ }
   }
-  return { progress: {}, unlockedCount: INITIAL_UNLOCK, sessionsCompleted: 0, direction: 'es2he' };
+  return defaultState();
 }
 
 function saveState() {
@@ -94,13 +226,15 @@ function shuffle(arr) {
 }
 
 function ensureUnlockCoverage() {
-  // Make sure there are at least SESSION_SIZE unmastered words available;
-  // otherwise open up more of the (harder) word list.
-  let unlocked = WORDS.filter(w => w.rank <= state.unlockedCount);
+  // Make sure there are at least SESSION_SIZE unmastered items available;
+  // otherwise open up more of the (harder) list.
+  const set = activeSet();
+  const type = state.contentType;
+  let unlocked = set.filter(w => w.rank <= state.unlockedCount[type]);
   let unmastered = unlocked.filter(w => !isMastered(w.id));
-  while (unmastered.length < SESSION_SIZE && state.unlockedCount < WORDS.length) {
-    state.unlockedCount = Math.min(WORDS.length, state.unlockedCount + 10);
-    unlocked = WORDS.filter(w => w.rank <= state.unlockedCount);
+  while (unmastered.length < SESSION_SIZE && state.unlockedCount[type] < set.length) {
+    state.unlockedCount[type] = Math.min(set.length, state.unlockedCount[type] + 10);
+    unlocked = set.filter(w => w.rank <= state.unlockedCount[type]);
     unmastered = unlocked.filter(w => !isMastered(w.id));
   }
 }
@@ -130,7 +264,9 @@ function reviewPriorityOrder(candidates) {
 
 function buildSession() {
   ensureUnlockCoverage();
-  const unlocked = WORDS.filter(w => w.rank <= state.unlockedCount);
+  const set = activeSet();
+  const type = state.contentType;
+  const unlocked = set.filter(w => w.rank <= state.unlockedCount[type]);
   const unmastered = unlocked.filter(w => !isMastered(w.id));
 
   const review = reviewPriorityOrder(unmastered.filter(w => getCorrectCount(w.id) > 0));
@@ -147,8 +283,8 @@ function buildSession() {
 
   remaining = SESSION_SIZE - session.length;
   if (remaining > 0) {
-    // Not enough unmastered words unlocked (edge case near full mastery) -
-    // top up with any remaining unmastered words, then mastered ones as review practice.
+    // Not enough unmastered items unlocked (edge case near full mastery) -
+    // top up with any remaining unmastered items, then mastered ones as review practice.
     const usedIds = new Set(session.map(w => w.id));
     const leftoverUnmastered = unmastered.filter(w => !usedIds.has(w.id));
     session = session.concat(shuffle(leftoverUnmastered).slice(0, remaining));
@@ -156,8 +292,8 @@ function buildSession() {
   }
   if (remaining > 0) {
     const usedIds = new Set(session.map(w => w.id));
-    const masteredWords = WORDS.filter(w => !usedIds.has(w.id) && w.rank <= state.unlockedCount);
-    session = session.concat(shuffle(masteredWords).slice(0, remaining));
+    const masteredItems = set.filter(w => !usedIds.has(w.id) && w.rank <= state.unlockedCount[type]);
+    session = session.concat(shuffle(masteredItems).slice(0, remaining));
   }
 
   return shuffle(session).slice(0, SESSION_SIZE);
@@ -223,7 +359,7 @@ function renderCard() {
   speakWord(frontText, frontLang);
 
   const cc = getCorrectCount(word.id);
-  els.cardMastery.textContent = `התקדמות: ${cc}/${MASTERY_TARGET}`;
+  els.cardMastery.textContent = progressLabelText(cc);
   updateSessionProgressUI();
 }
 
@@ -268,34 +404,41 @@ function finishSession() {
   let bonus = 5;
   if (accuracy >= 0.8) bonus = 25;
   else if (accuracy >= 0.5) bonus = 15;
-  state.unlockedCount = Math.min(WORDS.length, state.unlockedCount + bonus);
+  const type = state.contentType;
+  state.unlockedCount[type] = Math.min(activeSet().length, state.unlockedCount[type] + bonus);
   saveState();
 
   els.doneCorrectFirst.textContent = session.firstTryCorrect;
   els.doneMasteredNow.textContent = session.masteredNow;
+  els.completeSub.textContent = completeSubText();
+  els.doneMasteredLabel.textContent = doneMasteredLabelText();
   showScreen('complete');
 }
 
 // ---- Home / stats rendering ----
 function refreshHomeStats() {
-  const mastered = WORDS.filter(w => isMastered(w.id)).length;
-  const inProgress = WORDS.filter(w => !isMastered(w.id) && getCorrectCount(w.id) > 0).length;
+  const set = activeSet();
+  const type = state.contentType;
+  const mastered = set.filter(w => isMastered(w.id)).length;
+  const inProgress = set.filter(w => !isMastered(w.id) && getCorrectCount(w.id) > 0).length;
   els.homeMastered.textContent = mastered;
   els.homeInProgress.textContent = inProgress;
-  els.homeUnlocked.textContent = Math.min(state.unlockedCount, WORDS.length);
-  els.homeProgressFill.style.width = `${(mastered / WORDS.length) * 100}%`;
+  els.homeUnlocked.textContent = Math.min(state.unlockedCount[type], set.length);
+  els.homeProgressFill.style.width = `${(mastered / set.length) * 100}%`;
 }
 
 function renderStatsGrid() {
   els.statsGrid.innerHTML = '';
   const frag = document.createDocumentFragment();
-  WORDS.forEach(w => {
+  const set = activeSet();
+  const type = state.contentType;
+  set.forEach(w => {
     const cell = document.createElement('div');
     const cc = getCorrectCount(w.id);
     let cls = 'cell-locked';
     if (isMastered(w.id)) cls = 'cell-mastered';
     else if (cc > 0) cls = 'cell-progress';
-    else if (w.rank <= state.unlockedCount) cls = 'cell-progress';
+    else if (w.rank <= state.unlockedCount[type]) cls = 'cell-progress';
     cell.className = `word-cell ${cls}`;
     cell.textContent = w.es;
     cell.title = `${w.es} — ${w.he} (${cc}/${MASTERY_TARGET})`;
@@ -328,7 +471,11 @@ function cacheEls() {
     'flashcard', 'wordFront', 'wordBack', 'cardTagFront', 'cardTagBack', 'cardMastery',
     'answerButtons', 'btnWrong', 'btnCorrect',
     'doneCorrectFirst', 'doneMasteredNow', 'nextSessionBtn', 'backHomeBtn', 'speakBtn',
-    'dirEs2He', 'dirHe2Es',
+    'dirEs2He', 'dirHe2Es', 'typeWords', 'typePhrases', 'langBtn',
+    'brandText', 'homeTitle', 'homeIntro', 'statLabelMastered', 'statLabelInProgress',
+    'statLabelUnlocked', 'tapHint', 'sessionDoneLabel', 'completeTitle', 'completeSub',
+    'doneCorrectLabel', 'doneMasteredLabel', 'statsTitle', 'legendMastered', 'legendProgress',
+    'legendLocked',
   ].forEach(id => { els[id] = document.getElementById(id); });
 }
 
@@ -337,7 +484,7 @@ function wireEvents() {
   els.nextSessionBtn.addEventListener('click', startSession);
   els.backHomeBtn.addEventListener('click', () => showScreen('home'));
   els.exitSessionBtn.addEventListener('click', () => {
-    if (confirm('לצאת מהסשן? ההתקדמות שנשמרה עד כה תישאר.')) showScreen('home');
+    if (confirm(UI_STRINGS[state.uiLang].exitConfirm)) showScreen('home');
   });
 
   els.flashcard.addEventListener('click', revealCard);
@@ -359,10 +506,14 @@ function wireEvents() {
 
   els.dirEs2He.addEventListener('click', () => setDirection('es2he'));
   els.dirHe2Es.addEventListener('click', () => setDirection('he2es'));
+  els.typeWords.addEventListener('click', () => setContentType('words'));
+  els.typePhrases.addEventListener('click', () => setContentType('phrases'));
+  els.langBtn.addEventListener('click', () => applyUILang(state.uiLang === 'he' ? 'en' : 'he'));
 
   els.resetBtn.addEventListener('click', () => {
-    if (confirm('לאפס את כל ההתקדמות ב-500 המילים?')) {
-      state = { progress: {}, unlockedCount: INITIAL_UNLOCK, sessionsCompleted: 0, direction: state.direction };
+    if (confirm(UI_STRINGS[state.uiLang].resetConfirm)) {
+      const kept = { direction: state.direction, contentType: state.contentType, uiLang: state.uiLang };
+      state = Object.assign(defaultState(), kept);
       saveState();
       refreshHomeStats();
     }
@@ -374,15 +525,80 @@ function setDirection(dir) {
   saveState();
   els.dirEs2He.classList.toggle('active', dir === 'es2he');
   els.dirHe2Es.classList.toggle('active', dir === 'he2es');
-  els.startSessionBtn.textContent = dir === 'es2he'
-    ? 'התחל סשן לימוד ספרדית (15 מילים)'
-    : 'התחל סשן לימוד עברית (15 מילים)';
+  els.startSessionBtn.textContent = startSessionText();
+}
+
+function setContentType(type) {
+  state.contentType = type;
+  saveState();
+  els.typeWords.classList.toggle('active', type === 'words');
+  els.typePhrases.classList.toggle('active', type === 'phrases');
+  els.startSessionBtn.textContent = startSessionText();
+  refreshHomeStats();
+}
+
+function applyUILang(lang) {
+  state.uiLang = lang;
+  saveState();
+  const s = UI_STRINGS[lang];
+  const textDir = lang === 'en' ? 'ltr' : 'rtl';
+  // Set text + per-element dir together: English chrome text sitting inside
+  // an RTL-directioned element gets its punctuation reordered by the bidi
+  // algorithm (e.g. "!Welcome" instead of "Welcome!"), so every swapped
+  // chrome string needs its own explicit direction, independent of the
+  // page's overall RTL layout (which stays fixed either way).
+  function setText(el, text) {
+    el.textContent = text;
+    el.dir = textDir;
+  }
+
+  document.title = s.docTitle;
+  document.documentElement.lang = lang;
+  setText(els.brandText, s.brand);
+  setText(els.homeTitle, s.homeTitle);
+  setText(els.homeIntro, s.homeIntro);
+  setText(els.dirEs2He, s.dirEs2He);
+  setText(els.dirHe2Es, s.dirHe2Es);
+  setText(els.typeWords, s.typeWords);
+  setText(els.typePhrases, s.typePhrases);
+  setText(els.statLabelMastered, s.statMastered);
+  setText(els.statLabelInProgress, s.statInProgress);
+  setText(els.statLabelUnlocked, s.statUnlocked);
+  setText(els.resetBtn, s.resetBtn);
+  els.statsBtn.setAttribute('aria-label', s.statsBtnAria);
+  els.langBtn.setAttribute('aria-label', s.langBtnAria);
+  els.langBtn.textContent = lang === 'he' ? '🌐 EN' : '🌐 עב';
+  els.exitSessionBtn.setAttribute('aria-label', s.exitAria);
+  els.speakBtn.setAttribute('aria-label', s.speakAria);
+  setText(els.tapHint, s.tapHint);
+  setText(els.sessionDoneLabel, s.sessionDoneLabel);
+  setText(els.btnWrong, s.btnWrong);
+  setText(els.btnCorrect, s.btnCorrect);
+  setText(els.completeTitle, s.completeTitle);
+  setText(els.doneCorrectLabel, s.doneCorrectLabel);
+  setText(els.nextSessionBtn, s.nextSessionBtn);
+  setText(els.backHomeBtn, s.backHomeBtn);
+  setText(els.statsTitle, s.statsTitle);
+  setText(els.legendMastered, s.legendMastered);
+  setText(els.legendProgress, s.legendProgress);
+  setText(els.legendLocked, s.legendLocked);
+  els.closeStats.setAttribute('aria-label', s.closeAria);
+
+  // Refresh runtime-composed strings in case they're currently visible.
+  setText(els.startSessionBtn, startSessionText());
+  setText(els.completeSub, completeSubText());
+  setText(els.doneMasteredLabel, doneMasteredLabelText());
+  if (session && session.currentId != null) {
+    setText(els.cardMastery, progressLabelText(getCorrectCount(session.currentId)));
+  }
 }
 
 function init() {
   cacheEls();
   wireEvents();
+  applyUILang(state.uiLang);
   setDirection(state.direction);
+  setContentType(state.contentType);
   showScreen('home');
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js').catch(() => {});

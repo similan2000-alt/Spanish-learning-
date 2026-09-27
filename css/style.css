@@ -59,7 +59,13 @@ body {
   color: var(--blue-dark);
 }
 
-.app-credit { margin: -4px 0 6px; color: var(--ink-soft); font-size: 12px; text-align: center; }
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-credit { margin: -4px 0 6px; color: var(--blue-dark); font-size: 18px; font-weight: 800; text-align: center; }
 
 .icon-btn {
   background: var(--white);

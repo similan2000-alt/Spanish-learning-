@@ -19,32 +19,39 @@
 <div id="app">
 
   <header class="topbar">
-    <div class="brand">🇪🇸 ➜ 🇮🇱 קלפי ספרדית</div>
-    <button id="statsBtn" class="icon-btn" aria-label="סטטיסטיקה">📊</button>
+    <div class="brand" id="brandText">🇪🇸 ➜ 🇮🇱 קלפי ספרדית</div>
+    <div class="topbar-actions">
+      <button id="statsBtn" class="icon-btn" aria-label="סטטיסטיקה">📊</button>
+      <button id="langBtn" class="icon-btn" aria-label="שינוי שפת התצוגה">🌐</button>
+    </div>
   </header>
   <p class="app-credit">אילן שמחה</p>
 
   <!-- Home / start screen -->
   <section id="screen-home" class="screen active">
     <div class="hero-card">
-      <h1>ברוכים הבאים!</h1>
-      <p>למדו 500 המילים החשובות בספרדית, קלף אחרי קלף.</p>
+      <h1 id="homeTitle">ברוכים הבאים!</h1>
+      <p id="homeIntro">למדו 500 המילים החשובות בספרדית או בעברית, קלף אחרי קלף.</p>
       <div class="direction-toggle" role="group" aria-label="בחירת כיוון לימוד">
         <button id="dirEs2He" class="direction-btn active">🇪🇸 ➜ 🇮🇱 לימוד ספרדית</button>
         <button id="dirHe2Es" class="direction-btn">🇮🇱 ➜ 🇪🇸 לימוד עברית</button>
       </div>
+      <div class="direction-toggle" role="group" aria-label="בחירת סוג תוכן">
+        <button id="typeWords" class="direction-btn active">מילים בודדות</button>
+        <button id="typePhrases" class="direction-btn">ביטויי שיחה</button>
+      </div>
       <div class="home-stats">
         <div class="stat-pill pill-cyan">
           <span class="stat-num" id="homeMastered">0</span>
-          <span class="stat-label">מילים ידועות</span>
+          <span class="stat-label" id="statLabelMastered">מילים ידועות</span>
         </div>
         <div class="stat-pill pill-yellow">
           <span class="stat-num" id="homeInProgress">0</span>
-          <span class="stat-label">בתהליך לימוד</span>
+          <span class="stat-label" id="statLabelInProgress">בתהליך לימוד</span>
         </div>
         <div class="stat-pill pill-green">
           <span class="stat-num" id="homeUnlocked">0</span>
-          <span class="stat-label">מילים נפתחו</span>
+          <span class="stat-label" id="statLabelUnlocked">מילים נפתחו</span>
         </div>
       </div>
       <div class="progress-track" aria-hidden="true">
@@ -63,7 +70,7 @@
         <div class="session-progress-track">
           <div class="session-progress-fill" id="sessionProgressFill"></div>
         </div>
-        <div class="session-progress-text"><span id="sessionDone">0</span>/<span id="sessionTotal">15</span> הושלמו</div>
+        <div class="session-progress-text"><span id="sessionDone">0</span>/<span id="sessionTotal">15</span> <span id="sessionDoneLabel">הושלמו</span></div>
       </div>
       <div class="streak-badge" id="streakBadge">🔥 0</div>
     </div>
@@ -74,7 +81,7 @@
           <span class="card-lang-tag tag-blue" id="cardTagFront">ES</span>
           <button id="speakBtn" class="speak-btn" aria-label="השמע הגייה">🔊</button>
           <div class="card-word" id="wordFront">palabra</div>
-          <div class="tap-hint">הקש כדי לראות את התרגום 👆</div>
+          <div class="tap-hint" id="tapHint">הקש כדי לראות את התרגום 👆</div>
         </div>
         <div class="card-face card-back">
           <span class="card-lang-tag tag-yellow" id="cardTagBack">HE</span>
@@ -94,16 +101,16 @@
   <section id="screen-complete" class="screen">
     <div class="hero-card complete-card">
       <div class="complete-emoji">🎉</div>
-      <h1>כל הכבוד!</h1>
-      <p>סיימת סשן לימוד של 15 מילים.</p>
+      <h1 id="completeTitle">כל הכבוד!</h1>
+      <p id="completeSub">סיימת סשן לימוד של 15 מילים.</p>
       <div class="home-stats">
         <div class="stat-pill pill-green">
           <span class="stat-num" id="doneCorrectFirst">0</span>
-          <span class="stat-label">נכון בפעם הראשונה</span>
+          <span class="stat-label" id="doneCorrectLabel">נכון בפעם הראשונה</span>
         </div>
         <div class="stat-pill pill-cyan">
           <span class="stat-num" id="doneMasteredNow">0</span>
-          <span class="stat-label">מילים חדשות שנלמדו לגמרי</span>
+          <span class="stat-label" id="doneMasteredLabel">מילים חדשות שנלמדו לגמרי</span>
         </div>
       </div>
       <button id="nextSessionBtn" class="btn btn-primary btn-big">סשן נוסף</button>
@@ -115,12 +122,12 @@
   <div id="statsModal" class="modal">
     <div class="modal-card">
       <button id="closeStats" class="icon-btn modal-close" aria-label="סגור">✕</button>
-      <h2>ההתקדמות שלי</h2>
+      <h2 id="statsTitle">ההתקדמות שלי</h2>
       <div class="stats-grid" id="statsGrid"></div>
       <div class="legend">
-        <span><i class="dot dot-green"></i> ידוע (5/5)</span>
-        <span><i class="dot dot-yellow"></i> בתהליך</span>
-        <span><i class="dot dot-blue"></i> טרם נפתח</span>
+        <span><i class="dot dot-green"></i> <span id="legendMastered">ידוע (5/5)</span></span>
+        <span><i class="dot dot-yellow"></i> <span id="legendProgress">בתהליך</span></span>
+        <span><i class="dot dot-blue"></i> <span id="legendLocked">טרם נפתח</span></span>
       </div>
     </div>
   </div>
@@ -128,6 +135,7 @@
 </div>
 
 <script src="js/words.js"></script>
+<script src="js/phrases.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
