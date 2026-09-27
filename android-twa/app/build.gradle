@@ -1,11 +1,11 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace 'com.spanishflashcards.twa'
+    namespace 'io.github.similan2000_alt.twa'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.spanishflashcards.twa"
+        applicationId "io.github.similan2000_alt.twa"
         minSdk 21
         targetSdk 34
         versionCode 1

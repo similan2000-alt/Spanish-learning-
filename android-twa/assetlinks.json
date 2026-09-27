@@ -3,7 +3,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.spanishflashcards.twa",
+      "package_name": "io.github.similan2000_alt.twa",
       "sha256_cert_fingerprints": [
         "D1:BA:9F:08:1E:DE:A2:C8:F9:51:23:D2:31:38:1F:D2:39:ED:B8:56:09:B8:3E:E7:98:34:EF:15:B8:AB:D1:11"
       ]
